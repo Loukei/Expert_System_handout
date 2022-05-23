@@ -1,0 +1,34 @@
+(deftemplate happen (slot type))
+(deffacts initial
+ (happen (type noise-when-brake))
+ (happen (type noise-from-tire)) 
+ (happen (type water-leak))
+ (happen (type noise-from-engine-room))
+ (happen (type engine-cannot-catch))
+)
+(defrule brake-trouble
+ (or
+    (happen (type noise-when-brake))
+    (happen (type noise-from-tire))
+ )
+=>
+ (printout t "check brake pedal and oil" crlf)
+)
+(defrule water-tank-trouble
+ (or
+    (happen (type water-thermometer-H))
+    (happen (type water-leak))
+ )
+=>
+ (printout t "repair the water tank or add water" crlf)
+)
+(defrule engine-belt-loose
+    (happen (type noise-from-engine-room))
+=>
+ (printout t "change the engine belt" crlf)
+)
+(defrule car-battery-no-power
+    (happen (type engine-cannot-catch))
+=>
+ (printout t "replace or charge a car battery" crlf)
+)

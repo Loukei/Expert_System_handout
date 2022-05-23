@@ -1,0 +1,104 @@
+(deftemplate binary (slot name)(multislot digits))
+(deftemplate add(slot carry)(multislot A+B)(multislot ans))
+(deffacts init
+ (add(carry 0)(A+B )(ans ))
+)
+(defrule base-fact
+ (declare(salience 100))
+ (not (input OK))
+=>
+ (printout t "Please input binary number:A ")
+ (assert(binary(name A)(digits (explode$(readline)))))
+ (printout t "Please input binary number:B ")
+ (assert(binary(name B)(digits (explode$(readline)))))
+ (assert(input OK))
+)
+(defrule check-error
+ (declare(salience 80))
+ ?f1<-(binary(name A)(digits $? ?a $?))
+ ?f2<-(binary(name B)(digits $? ?b $?))
+ ?f3<-(input OK)
+ (test(or (and(neq ?a 1)(neq ?a 0))
+      (and(neq ?b 1)(neq ?b 0))))
+=>
+ (retract ?f1 ?f2 ?f3)
+ (printout t "Input error!!Please input binary numbers!!")
+)  
+(defrule inital-0
+ (declare(salience 50))
+ ?f1<-(binary(name A)(digits $?x ?a))
+ ?f2<-(binary(name B)(digits $?y ?b))
+ ?f3<-(add(carry 0)(A+B $?z)(ans ))
+=>
+ (assert(binary(name A)(digits $?x)))
+ (assert(binary(name B)(digits $?y)))
+ (assert(add(carry 0)(A+B (+ ?a ?b) $?z)(ans )))
+ (retract ?f1 ?f2 ?f3)
+)
+(defrule inital-1
+ (declare(salience 20))
+ (binary(name B)(digits ))
+ ?f1<-(binary(name A)(digits $?x))
+ ?f2<-(add(carry 0)(A+B $?z)(ans )) 
+=>
+ (assert(add(carry 0)(A+B $?x $?z)(ans ))) 
+ (retract ?f1 ?f2)
+)
+(defrule inital-2
+ (declare(salience 20))
+ (binary(name A)(digits ))
+ ?f1<-(binary(name B)(digits $?x))
+ ?f2<-(add(carry 0)(A+B $?z)(ans $?n)) 
+=>
+ (assert(add(carry 0)(A+B $?x $?z)(ans $?n))) 
+ (retract ?f1 ?f2)
+)
+(defrule carry-00
+ ?f1<-(add(carry 0)(A+B $?z 0)(ans $?n))
+=>
+ (assert(add(carry 0)(A+B $?z)(ans 0 $?n)))
+ (retract ?f1)
+)
+(defrule carry-01
+ ?f1<-(add(carry 0)(A+B $?z 1)(ans $?n))
+=>
+ (assert(add(carry 0)(A+B $?z)(ans 1 $?n)))
+ (retract ?f1)
+)
+(defrule carry-02
+ ?f1<-(add(carry 0)(A+B $?z 2)(ans $?n))
+=>
+ (assert(add(carry 1)(A+B $?z)(ans 0 $?n)))
+ (retract ?f1)
+)
+(defrule carry-10
+ ?f1<-(add(carry 1)(A+B $?z 0)(ans $?n))
+=>
+ (assert(add(carry 0)(A+B $?z)(ans 1 $?n)))
+ (retract ?f1)
+)
+(defrule carry-11
+ ?f1<-(add(carry 1)(A+B $?z 1)(ans $?n))
+=>
+ (assert(add(carry 1)(A+B $?z)(ans 0 $?n)))
+ (retract ?f1)
+)
+(defrule carry-12
+ ?f1<-(add(carry 1)(A+B $?z 2)(ans $?n))
+=>
+ (assert(add(carry 1)(A+B $?z)(ans 1 $?n)))
+ (retract ?f1)
+)
+(defrule ans
+ ?f1<-(add(carry 1)(A+B)(ans $?n))
+=>
+ (assert(add(carry 0)(A+B)(ans 1 $?n)))
+ (retract ?f1)
+)
+(defrule end
+ (add(carry 0)(A+B)(ans $?n))
+=>
+ (printout t "A+B="(implode$ $?n) crlf)
+)
+
+

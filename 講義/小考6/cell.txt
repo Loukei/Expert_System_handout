@@ -1,0 +1,128 @@
+(deftemplate MAIN::neighbor-sum (slot row) (slot column) (slot value))
+(deftemplate MAIN::cell (slot row) (slot column) (slot status))
+(deftemplate MAIN::dimensions (slot rows) (slot columns))
+(deftemplate MAIN::neighbor (slot row) (slot column) (multislot cell))
+
+(deffacts MAIN::initial
+ (cell (row 5) (column 5) (status dead))
+ (cell (row 5) (column 4) (status dead))
+ (cell (row 5) (column 3) (status dead))
+ (cell (row 5) (column 2) (status dead))
+ (cell (row 5) (column 1) (status dead))
+ (cell (row 4) (column 5) (status dead))
+ (cell (row 4) (column 4) (status alive))
+ (cell (row 4) (column 3) (status dead))
+ (cell (row 4) (column 2) (status dead))
+ (cell (row 4) (column 1) (status dead))
+ (cell (row 3) (column 5) (status alive))
+ (cell (row 3) (column 4) (status dead))
+ (cell (row 3) (column 3) (status dead))
+ (cell (row 3) (column 2) (status alive))
+ (cell (row 3) (column 1) (status dead))
+ (cell (row 2) (column 5) (status alive))
+ (cell (row 2) (column 4) (status alive))
+ (cell (row 2) (column 3) (status alive))
+ (cell (row 2) (column 2) (status alive))
+ (cell (row 2) (column 1) (status dead))
+ (cell (row 1) (column 5) (status alive))
+ (cell (row 1) (column 4) (status dead))
+ (cell (row 1) (column 3) (status dead))
+ (cell (row 1) (column 2) (status alive))
+ (cell (row 1) (column 1) (status dead))	
+ (dimensions (rows 5) (columns 5))
+ (current-generation 0)
+ (last-generation 4)
+)
+
+(defrule MAIN::life-init
+ (last-generation ?l)
+ ?f <- (current-generation ?c&:(<= ?c ?l))
+=>
+ (assert (x 1))
+ (assert (y 1))
+ (printout t "Generation "(+ ?c 1) crlf)
+)
+
+(defrule MAIN::show-dead
+ (x ?x)
+ ?f1<-(y ?y)
+ (cell(row ?x)(column ?y)(status dead))
+=>
+ (printout t "-")
+ (retract ?f1)
+ (assert (y (+ ?y 1)))
+ (assert (neighbor-sum (row ?x) (column ?y) (value 0)))
+)
+(defrule MAIN::show-alive
+ (x ?x)
+ ?f1<-(y ?y)
+ (cell(row ?x)(column ?y)(status alive))
+=>
+ (printout t "*")
+ (retract ?f1)
+ (assert (y (+ ?y 1)))
+ (assert (neighbor(row (+ ?x 1))(column ?y)(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row (+ ?x 1))(column (+ ?y 1))(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row (+ ?x 1))(column (- ?y 1))(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row ?x)(column (+ ?y 1))(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row ?x)(column (- ?y 1))(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row (- ?x 1))(column ?y)(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row (- ?x 1))(column (+ ?y 1))(cell (implode$(create$ ?x ?y)))))
+ (assert (neighbor(row (- ?x 1))(column (- ?y 1))(cell (implode$(create$ ?x ?y))))) 
+ (assert (neighbor-sum (row ?x) (column ?y) (value 0)))
+)
+(defrule MAIN::show-change
+ ?f1<-(x ?x)
+ ?f2<-(y 6)
+=>
+ (retract ?f1 ?f2)
+ (assert (x (+ ?x 1)))
+ (assert (y 1))
+ (printout t crlf)
+)
+
+(defrule MAIN::count
+ ?f1<-(neighbor (row ?x)(column ?y)(cell ?z))
+ ?f2<-(neighbor-sum (row ?x)(column ?y)(value ?v))
+=>
+ (retract ?f1 ?f2)
+ (assert (neighbor-sum (row ?x)(column ?y)(value (+ ?v 1))))
+) 
+  
+(defrule MAIN::adjacent-alive-dead
+ (declare (salience -10))
+ ?f1<-(neighbor-sum(row ?x)(column ?y)(value ?v))
+ ?f2<-(cell(row ?x)(column ?y)(status alive))
+ (or(test(< ?v 2))
+    (test(> ?v 3)))
+=>
+ (retract ?f1 ?f2)
+ (assert (cell(row ?x)(column ?y)(status dead)))
+) 
+(defrule MAIN::adjacent-dead-alive
+ (declare (salience -10))
+ ?f1<-(neighbor-sum(row ?x)(column ?y)(value ?v))
+ ?f2<-(cell(row ?x)(column ?y)(status dead))
+ (test(= ?v 3))
+=>
+ (retract ?f1 ?f2)
+ (assert (cell(row ?x)(column ?y)(status alive)))
+)  
+(defrule MAIN::adjacent-still
+ (declare (salience -20))
+ ?f1<-(neighbor-sum(row ?x)(column ?y)(value ?v))
+ ?f2<-(cell(row ?x)(column ?y)(status ?s))
+=>
+ (retract ?f1 ?f2)
+ (assert (cell(row ?x)(column ?y)(status ?s)))
+)
+
+(defrule MAIN::Next
+ (declare (salience -30))
+ ?f1<-(x 6)
+ ?f2<-(y 1)
+ ?f3<-(current-generation ?c)
+=>
+ (retract ?f1 ?f2 ?f3)
+ (assert (current-generation (+ ?c 1)))
+) 

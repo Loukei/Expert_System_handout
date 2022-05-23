@@ -1,0 +1,125 @@
+(deftemplate person (slot name)(slot sex))
+(deftemplate parent-children (multislot parent)(multislot children))
+(deftemplate pair (slot husband)(slot wife))
+(deftemplate query (slot name)(slot subject))
+
+(deffacts initial
+ (person (name John)(sex male))
+ (person (name Peter)(sex male))
+ (person (name David)(sex male))
+ (person (name Joe)(sex male))
+ (person (name Kevin)(sex male))
+ (person (name Mary)(sex female))
+ (person (name Sue)(sex female))
+ (person (name Linda)(sex female))
+ (person (name Sherry)(sex female))
+ (pair (husband John)(wife Sue))
+ (pair (husband David)(wife Linda))
+ (pair (husband Peter)(wife Sherry))
+ (parent-children (parent John Sue)(children Mary Kevin))
+ (parent-children (parent Peter Sherry)(children John Linda))
+ (parent-children (parent David Linda)(children Joe))
+ (query (name Mary)(subject Kevin))
+ (query (name Sue)(subject Kevin))
+ (query (name Peter)(subject Kevin))
+ (query (name David)(subject Kevin))
+ (query (name Linda)(subject Kevin))
+ (query (name Joe)(subject Kevin))
+)
+
+(defrule pair
+ (query (name ?a)(subject ?b))
+ (pair (husband ?x)(wife ?y))
+ (or
+   (and(test (eq ?x ?a))
+       (test (eq ?y ?b)))    
+   (and(test (eq ?x ?b))
+      (test (eq ?y ?a)))
+ )   
+ =>
+ (printout t ?a " and " ?b " are pair." crlf )
+)
+
+(defrule brother
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex male))
+ (parent-children (parent $?p)(children $? ?a $?))
+ (parent-children (parent $?p)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s brother." crlf )
+)
+
+(defrule sister
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex female))
+ (parent-children (parent $?p)(children $? ?a $?))
+ (parent-children (parent $?p)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s sister." crlf )
+)
+
+(defrule father
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex male))
+ (parent-children (parent $? ?a $?)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s father." crlf )
+) 
+
+(defrule mother
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex female))
+ (parent-children (parent $? ?a $?)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s mother." crlf )
+) 
+
+(defrule grandfather
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex male))
+ (parent-children (parent $? ?a $?)(children $? ?c $?))
+ (parent-children (parent $? ?c $?)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s grandfather." crlf )
+) 
+
+(defrule grandmother
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex female))
+ (parent-children (parent $? ?a $?)(children $? ?c $?))
+ (parent-children (parent $? ?c $?)(children $? ?b $?))
+=>
+ (printout t ?a " is " ?b "'s grandmother." crlf )
+) 
+
+(defrule uncle
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex male))
+ (pair (husband ?a)(wife ?w))
+ (parent-children (parent $?p)(children $? ?c $?))
+ (parent-children (parent $? ?c $?)(children $? ?b $?))
+ (parent-children (parent $?p)(children $? ?w $?))
+=>
+ (printout t ?a " is " ?b "'s uncle." crlf )
+) 
+
+(defrule aunt
+ (query (name ?a)(subject ?b))
+ (person (name ?a)(sex female))
+ (parent-children (parent $?p)(children $? ?c $?))
+ (parent-children (parent $? ?c $?)(children $? ?b $?))
+ (parent-children (parent $?p)(children $? ?a $?))
+=>
+ (printout t ?a " is " ?b "'s aunt." crlf )
+) 
+
+(defrule cousin
+ (query (name ?a)(subject ?b))
+ (parent-children (parent $?p)(children $? ?c $?))
+ (parent-children (parent $? ?c $?)(children $? ?b $?))
+ (parent-children (parent $?p)(children $? ?d $?))
+ (parent-children (parent $? ?d $?)(children $? ?a $?)) 
+ (test(neq $?c $?d))
+=>
+ (printout t ?a " is " ?b "'s cousin."crlf )
+)

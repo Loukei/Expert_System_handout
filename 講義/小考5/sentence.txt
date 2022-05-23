@@ -1,0 +1,62 @@
+(defmodule MAIN(export deftemplate sentence))
+(defrule MAIN::control-rule
+ (not(sentence $?))
+ =>
+ (printout t "Enter a sentence(<CR> to end): ")
+ (bind ?input (readline))
+ (assert (sentence (explode$ ?input) <END>))
+ (focus PRODUCTION RECOGNIZE)
+)
+(defmodule PRODUCTION (import MAIN deftemplate sentence))
+(defmodule RECOGNIZE (import MAIN deftemplate sentence))
+(deffacts PRODUCTION::productions
+ (production <determiner> a)
+ (production <determiner> an)
+ (production <determiner> the)
+ (production <adjective> red)
+ (production <adjective> shiny)
+ (production <adjective> heavy)
+ (production <noun> ball)
+ (production <noun> wrench)
+ (production <noun> gun)
+ (production <noun> pliers)
+ (production <preposition> with)
+ (production <preposition> in)
+ (production <preposition> at)
+ (production <verb> get)
+ (production <verb> throw)
+ (production <verb> shoot)
+ (production <adjective-noun> <noun>)
+ (production <adjective-noun> <adjective> <noun>)
+ (production <adjective-noun> <adjective> <adjective-noun>)
+ (production <direct-object> <adjective-noun>)
+ (production <direct-object> <determiner> <adjective-noun>)
+ (production <indirect-object> <preposition> <direct-object>)
+ (production <sentence> <verb> <direct-object> <END>)
+ (production <sentence> <verb> <direct-object> <indirect-object> <END>)
+)
+(defrule PRODUCTION::change
+ ?f1<-(sentence $?a $?x $?b)
+ (production ?y $?x)
+=>
+ (retract ?f1)
+ (assert (sentence $?a ?y $?b))
+)
+(defrule PRODUCTION::END 
+ (sentence <END>)
+=>
+ (halt)
+)
+(defrule RECOGNIZE::OK
+ ?f1<-(sentence <sentence>)
+=>
+ (printout t "OK"crlf)
+ (retract ?f1)
+)
+(defrule RECOGNIZE::NOTOK
+ ?f1<-(sentence $?a)
+ (not(sentence <sentence>))
+=>
+ (printout t "I don't understand."crlf)
+ (retract ?f1)
+)

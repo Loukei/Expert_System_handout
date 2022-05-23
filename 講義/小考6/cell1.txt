@@ -1,0 +1,194 @@
+(defmodule MAIN (export ?ALL))
+(deftemplate MAIN::cell(slot row)(slot col)(slot sta))
+(deftemplate MAIN::dims(slot rows)(slot cols))
+
+(defmodule COMPUTE-NEIGHBORS (import MAIN deftemplate cell)(export deftemplate nei-sum))
+(deftemplate COMPUTE-NEIGHBORS::nei(slot row)(slot col)(multislot cell))
+(deftemplate COMPUTE-NEIGHBORS::nei-sum(slot row)(slot col)(slot value))
+
+(defmodule NEXT-GENERATION   (import MAIN deftemplate cell)(import COMPUTE-NEIGHBORS deftemplate nei-sum))
+(defmodule PRINT (import MAIN ?ALL))
+
+
+
+(deffacts MAIN::init
+        (cell (row 1) (col 1) (sta 0))
+        (cell (row 1) (col 2) (sta 1))
+        (cell (row 1) (col 3) (sta 0))
+        (cell (row 1) (col 4) (sta 0))
+        (cell (row 1) (col 5) (sta 1))
+        (cell (row 2) (col 1) (sta 0))
+        (cell (row 2) (col 2) (sta 1))
+        (cell (row 2) (col 3) (sta 1))
+        (cell (row 2) (col 4) (sta 1))
+        (cell (row 2) (col 5) (sta 1))
+        (cell (row 3) (col 1) (sta 0))
+        (cell (row 3) (col 2) (sta 1))
+        (cell (row 3) (col 3) (sta 0))
+        (cell (row 3) (col 4) (sta 0))
+        (cell (row 3) (col 5) (sta 1))
+        (cell (row 4) (col 1) (sta 0))
+        (cell (row 4) (col 2) (sta 0))
+        (cell (row 4) (col 3) (sta 0))
+        (cell (row 4) (col 4) (sta 1))
+        (cell (row 4) (col 5) (sta 0))
+        (cell (row 5) (col 1) (sta 0))
+        (cell (row 5) (col 2) (sta 0))
+        (cell (row 5) (col 3) (sta 0))
+        (cell (row 5) (col 4) (sta 0))
+        (cell (row 5) (col 5) (sta 0))
+        (dims (rows 5)(cols 5))
+        (current-gen  1)
+        (last-gen 5)
+
+
+)
+
+
+(defrule MAIN::life-init
+ (last-gen ?l)
+ ?f<-(current-gen ?c&:(<= ?c ?l))
+=>
+(retract ?f)
+(assert (current-gen (+ ?c 1)))
+(printout t ?c"th" crlf)
+(focus PRINT COMPUTE-NEIGHBORS NEXT-GENERATION))
+
+
+
+;;;***************************
+;;;* COMPUTE-NEIGHBORS MODULE RULES *
+;;;***************************
+
+
+(defrule COMPUTE-NEIGHBORS::init-cell
+   (declare (salience 1000))
+   (cell (row ?r1) (col ?c1) (sta ?s))
+=>
+  (assert (nei-sum (row ?r1) (col ?c1) (value 0)))
+  (assert (nei(row ?r1) (col ?c1) (cell ) ))
+)
+
+
+(defrule COMPUTE-NEIGHBORS::count-cell-1
+  (cell (row ?r1) (col ?c1) (sta ?s))
+  ?cell <- (cell (row ?r2) (col ?c2) (sta 1))
+
+
+  (or   (test(and (= ?r2 (- ?r1 1 )) (= ?c2 ?c1 )))
+        (test(and (= ?r2 (+ ?r1 1 )) (= ?c2 ?c1 )))
+        (test(and (= ?c2 (- ?c1 1 )) (= ?r2 ?r1 )))
+        (test(and (= ?c2 (+ ?c1 1 )) (= ?r2 ?r1 )))
+        (test(and (= ?r2(- ?r1 1)) (= ?c2(+ ?c1 1))))
+        (test(and (= ?r2(+ ?r1 1)) (= ?c2(+ ?c1 1))))
+        (test(and (= ?r2(- ?r1 1)) (= ?c2(- ?c1 1))))
+        (test(and (= ?r2(+ ?r1 1)) (= ?c2(- ?c1 1))))
+  )
+          (not(nei(row ?r1)(col ?c1)(cell $?p1 ?cell $?p2)) )
+          ?neighbor <- (nei (row ?r1)(col ?c1)(cell $?p3) )
+          ?ns<-(nei-sum(row ?r1)(col ?c1)(value ?v))
+=>
+ ;(printout t ?r1" " ?c1" " ?v crlf)
+ (retract ?ns ?neighbor)
+ (assert (nei(row ?r1)(col ?c1)(cell $?p3 ?cell)))
+ (assert (nei-sum(row ?r1)(col ?c1)(value (+ ?v 1))))
+)
+
+
+(defrule COMPUTE-NEIGHBORS::end
+  (declare (salience -1000))
+  ?aa<-(nei(row ?r1) (col ?c1) (cell $?p1))
+=>
+(retract ?aa)
+)
+
+;;;**************************************
+;;;* NEXT-GENERATION MODULE RULES *
+;;;**************************************
+
+
+
+(defrule NEXT-GENERATION::alive-alive
+  ?live<-(cell(row ?r1)(col ?c1)(sta ?s))
+  ?ns<-(nei-sum(row ?r1)(col ?c1)(value ?v))
+  (test (= ?v 3))
+
+=>
+(retract ?live ?ns)
+(assert (cell(row ?r1)(col ?c1)(sta 1)))
+)
+
+
+(defrule NEXT-GENERATION::alive-dead
+  ?live <- (cell(row ?r1)(col ?c1)(sta ?s))
+  ?ns <- (nei-sum(row ?r1)(col ?c1)(value ?v))
+  (test(= ?v 2))
+
+=>
+(retract ?live ?ns)
+(assert (cell(row ?r1)(col ?c1)(sta ?s)))
+)
+
+
+(defrule NEXT-GENERATION::dead-alive
+  ?live <- (cell(row ?r1)(col ?c1)(sta ?s))
+  ?ns <- (nei-sum(row ?r1)(col ?c1)(value ?v))
+ (and    (test (!= ?v 3))
+         (test (!= ?v 2))
+ )
+=>
+(retract ?live ?ns)
+(assert (cell(row ?r1)(col ?c1)(sta 0)))
+)
+
+
+;;;**************************************
+;;;* PRINT MODULE RULES *
+;;;**************************************
+
+(defrule PRINT::x-y
+        (current-gen ?cn)
+=>
+        (assert (x 1))
+        (assert (y 1))
+)
+
+(defrule PRINT::show-dead
+        (x ?x)
+        ?f1<-(y ?y)
+        (cell(row ?x)(col ?y)(sta 0))
+=>
+ (printout t "-")
+ (retract ?f1)
+ (assert (y (+ ?y 1)))
+)
+
+
+(defrule PRINT::show-alive
+        (x ?x)
+        ?f1<-(y ?y)
+        (cell(row ?x)(col ?y)(sta 1))
+=>
+ (printout t "*")
+ (retract ?f1)
+ (assert (y (+ ?y 1)))
+)
+
+
+(defrule PRINT::show-line
+        ?f1 <- (x ?x)
+        ?f2 <- (y 6)
+=>
+ (retract ?f1 ?f2)
+ (assert (x (+ ?x 1)))
+ (assert (y 1))
+ (printout t crlf)
+)
+
+
+(defrule  PRINT::chang
+        ?f1<- (x 6)
+        ?f2<- (y 1)
+=>
+        (retract ?f1 ?f2)
+)

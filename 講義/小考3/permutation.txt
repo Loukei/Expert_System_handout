@@ -1,0 +1,29 @@
+(deftemplate fact (multislot top)(multislot down)) 
+(deffacts intial (total 0))
+(defrule read-base-fact
+ (declare(salience 100))
+ =>
+ (printout t "Please input a base fact for the permutation...")
+ (assert(fact (top )(down(explode$ (readline)))))
+)
+
+(defrule permutation
+ (fact(top $?p)(down $?a ?x $?b))
+=>
+ (assert(fact (top $?p ?x)(down $?a $?b))) 
+)
+
+(defrule ans
+ ?f<-(fact(top $?p)(down ))
+ ?t<-(total ?n)
+=>
+ (assert(total (+ 1 ?n)))
+ (retract ?t ?f)
+ (printout t $?p crlf)
+)
+(defrule total
+ (declare(salience -100))
+ (total ?n)
+ =>
+ (printout t ?n crlf)
+)
